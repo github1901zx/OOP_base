@@ -5,9 +5,9 @@
 import re
 import pytest
 
-from src.model.bank_account import BankAccount
-from src.model.abstract_account import Owner, AccountStatus, Currency
-from src.exeptions.exceptions import (
+from src.day1.model.bank_account import BankAccount
+from src.day1.model.abstract_account import Owner, AccountStatus, Currency
+from src.day1.exeptions.exceptions import (
     AccountFrozenError,
     AccountClosedError,
     InvalidOperationError,

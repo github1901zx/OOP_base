@@ -7,8 +7,8 @@ from __future__ import annotations
 import uuid
 from typing import Any, Dict
 
-from src.model.abstract_account import AbstractAccount, AccountStatus, Currency, Owner
-from src.exeptions.exceptions import (
+from src.day1.model.abstract_account import AbstractAccount, AccountStatus, Currency, Owner
+from src.day1.exeptions.exceptions import (
     AccountClosedError,
     AccountFrozenError,
     InvalidOperationError,
