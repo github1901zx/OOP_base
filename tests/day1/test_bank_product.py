@@ -1,6 +1,4 @@
-"""Тесты для банковского продукта (BankAccount).
-Запуск: pytest -q
-"""
+"""Тесты для банковского продукта (BankAccount)."""
 
 import re
 import pytest

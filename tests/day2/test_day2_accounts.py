@@ -1,6 +1,4 @@
-"""Тесты для продвинутых типов счетов — Day 2.
-Запуск: pytest -q
-"""
+"""Тесты для продвинутых типов счетов — Day 2."""
 from __future__ import annotations
 
 import pytest
