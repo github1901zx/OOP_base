@@ -183,14 +183,10 @@ class TransactionProcessor:
                 debit_amount = amount
                 debit_fee = fee_total
             total_debit = debit_amount + debit_fee
-            # Для премиум овердрафт допускается их собственным withdraw
+            # Для премиум овердрафт допускается их собственным withdraw.
+            # Один вызов: withdraw добавляет withdraw_fee_fixed к сумме; два вызова списали бы комиссию счёта дважды.
             if isinstance(sender, PremiumAccount):
-                # списание двумя шагами, чтобы применились их правила/комиссии нет в методе — поэтому уменьшаем напрямую
-                # Используем защищённый доступ через методы: сначала снимаем сумму, затем вручную уменьшаем на комиссию
-                sender.withdraw(debit_amount)
-                # Комиссию снимем как отдельное списание маленькой суммой
-                if debit_fee > 0:
-                    sender.withdraw(debit_fee)
+                sender.withdraw(total_debit)
             else:
                 # Для обычных — нельзя уходить в минус: проверим баланс
                 if total_debit > sender._balance:  # доступ к защищённому полю в рамках учебного задания

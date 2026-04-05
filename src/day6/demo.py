@@ -182,8 +182,7 @@ def make_transactions(accounts: Dict[str, BankAccount]) -> List[Transaction]:
         priority=9,
     ))
 
-    # Ночная транзакция для риска: назначим отдельный tx в ночное время
-    # Используем отдельный scheduled_at, а обрабатывать будем целым пакетом с ночным now
+    # Ночная транзакция для сценария риска (время в scheduled_at — ночь по UTC)
     night = now.replace(hour=2, minute=30)
     a = random.choice(acc_list)
     b = random.choice(acc_list)
@@ -226,9 +225,11 @@ def simulate() -> None:
         print(f"[QUEUE] Добавлена транзакция {tx.tx_id} (prio={tx.priority}, amount={tx.amount} {tx.currency.value})")
         queue.add(tx)
 
-    # Обработка: часть транзакций — в ночное время, чтобы сработали ночные риски
-    now_night = datetime.now(timezone.utc).replace(hour=2, minute=30)
-    proc.run_all(now=now_night)
+    # Время симуляции не должно быть раньше scheduled_at иначе pop_ready не отдаст заявки.
+    # Берём max(текущее время, последнее запланированное), чтобы обработать всю очередь.
+    latest_scheduled = max(tx.scheduled_at for tx in txs)
+    run_at = max(datetime.now(timezone.utc), latest_scheduled)
+    proc.run_all(now=run_at)
 
     # Итоги по транзакциям
     processed = sum(1 for t in txs if t.status == TransactionStatus.PROCESSED)
