@@ -54,6 +54,11 @@ def test_invalid_amount_raises(bad_amount, op):
         getattr(acc, op)(bad_amount)
 
 
+def test_negative_initial_balance_raises():
+    with pytest.raises(InvalidOperationError):
+        BankAccount(owner=make_owner(), balance=-1)
+
+
 def test_insufficient_funds():
     acc = BankAccount(owner=make_owner(), balance=20)
     with pytest.raises(InsufficientFundsError):

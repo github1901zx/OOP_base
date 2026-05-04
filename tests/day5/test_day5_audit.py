@@ -118,6 +118,31 @@ def test_new_recipient_and_night_operation_marked_medium(now: datetime):
     assert any(r.extra.get("tx_id") in {"M1", "M2"} for r in warnings)
 
 
+def test_night_risk_uses_transaction_time_not_run_time(now: datetime):
+    night = datetime(2025, 1, 1, 2, 0, tzinfo=timezone.utc)
+
+    b = BankAccount(owner=owner("B"), balance=0, currency=Currency.RUB)
+
+    q = TransactionQueue()
+    audit = AuditLog()
+    risk = RiskAnalyzer()
+    proc = TransactionProcessor(q, ProcessorConfig(), audit_log=audit, risk_analyzer=risk)
+
+    tx = Transaction(tx_id="N1", tx_type=TransactionType.TRANSFER, amount=10, currency=Currency.RUB,
+                     sender=None, recipient=b, scheduled_at=night, priority=1)
+    q.add(tx)
+
+    proc.run_all(now)
+
+    assert tx.status.name == "PROCESSED"
+    assert any(
+        r.level == AuditLevel.WARNING
+        and r.extra.get("tx_id") == "N1"
+        and "операция ночью" in r.extra.get("reasons", "")
+        for r in audit.records
+    )
+
+
 def test_audit_reports_and_file_save(tmp_path):
     audit = AuditLog()
     # Сымитируем записи

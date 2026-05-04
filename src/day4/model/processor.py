@@ -84,6 +84,7 @@ class TransactionProcessor:
         tx = self.queue.pop_ready(now)
         if not tx:
             return False
+        operation_time = tx.scheduled_at or now
         # (Day5) Оценка риска перед обработкой
         if self.risk_analyzer is not None:
             from src.day5.model.audit import RiskLevel  # локальный импорт, чтобы избежать жёсткой зависимости
@@ -92,7 +93,7 @@ class TransactionProcessor:
                 currency=tx.currency,
                 sender=tx.sender,
                 recipient=tx.recipient,
-                now=now,
+                now=operation_time,
             )
             # Запись в аудит
             if self.audit_log is not None:
@@ -132,13 +133,21 @@ class TransactionProcessor:
             return True
 
     def run_all(self, now: datetime | None = None, safety_limit: int = 1000) -> None:
-        """Выполняет все готовые транзакции до опустошения очереди или достижения лимита итераций."""
+        """Выполняет транзакции до опустошения очереди или достижения лимита итераций."""
         count = 0
+        current_time = now
         while count < safety_limit:
-            processed = self.process_next(now)
-            if not processed:
+            processed = self.process_next(current_time)
+            if processed:
+                count += 1
+                continue
+
+            next_scheduled_at = self.queue.next_pending_scheduled_at()
+            if next_scheduled_at is None:
                 break
-            count += 1
+            if current_time is not None and next_scheduled_at <= current_time:
+                break
+            current_time = next_scheduled_at
 
     def _ensure_account_active(self, acc: BankAccount | None) -> None:
         if acc is None:

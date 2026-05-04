@@ -73,7 +73,24 @@ class TransactionQueue:
             # Пропускаем отменённые/уже обработанные
             if tx.status != TransactionStatus.PENDING:
                 continue
+            # Если время транзакции изменили после помещения в кучу, запись устарела.
+            if tx.scheduled_at != top.scheduled_at:
+                continue
             return tx
+        return None
+
+    def next_pending_scheduled_at(self) -> datetime | None:
+        """Возвращает время следующей ожидающей транзакции без извлечения из очереди."""
+        while self._heap:
+            top = self._heap[0]
+            tx = self._items.get(top.tx_id)
+            if tx is None or tx.status != TransactionStatus.PENDING:
+                heapq.heappop(self._heap)
+                continue
+            if tx.scheduled_at != top.scheduled_at:
+                heapq.heappop(self._heap)
+                continue
+            return top.scheduled_at
         return None
 
     def requeue(self, tx: Transaction, delay_seconds: int = 0) -> None:

@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict
 
+from src.day1.exeptions.exceptions import InvalidOperationError
+
 
 class AccountStatus(Enum):
     """Статусы счёта."""
@@ -45,9 +47,12 @@ class AbstractAccount(ABC):
         # Данные владельца
         self.owner: Owner = owner
         # Защищённый баланс (начальное значение >= 0)
-        self._balance: float = float(balance) if balance is not None else 0.0
+        try:
+            self._balance: float = float(balance) if balance is not None else 0.0
+        except (TypeError, ValueError):
+            raise InvalidOperationError("Начальный баланс должен быть числом.")
         if self._balance < 0:
-            self._balance = 0.0
+            raise InvalidOperationError("Начальный баланс не может быть отрицательным.")
         # Статус счёта
         self.status: AccountStatus = status
         # Валюта счёта

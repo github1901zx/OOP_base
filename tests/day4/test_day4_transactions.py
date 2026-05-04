@@ -1,7 +1,7 @@
 """Тесты для Day4: система транзакций, очередь и процессор."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import pytest
 
@@ -92,3 +92,29 @@ def test_day4_full_flow():
 
     # Очередь опустела по готовым заданиям (pending нет)
     assert len(q.list_pending()) == 0
+
+
+def test_run_all_advances_to_delayed_transactions():
+    acc_a = BankAccount(owner=owner("Alice"), balance=100.0, currency=Currency.RUB)
+    acc_b = BankAccount(owner=owner("Bob"), balance=0.0, currency=Currency.RUB)
+
+    start = datetime(2025, 1, 1, 12, 0, tzinfo=timezone.utc)
+    delayed = start + timedelta(minutes=5)
+
+    q = TransactionQueue()
+    proc = TransactionProcessor(q)
+
+    t1 = Transaction(tx_id="d1", tx_type=TransactionType.TRANSFER, amount=10, currency=Currency.RUB,
+                     sender=acc_a, recipient=acc_b, scheduled_at=start, priority=2)
+    t2 = Transaction(tx_id="d2", tx_type=TransactionType.TRANSFER, amount=15, currency=Currency.RUB,
+                     sender=acc_a, recipient=acc_b, scheduled_at=delayed, priority=1)
+    q.add(t1)
+    q.add(t2)
+
+    proc.run_all(start)
+
+    assert t1.status == TransactionStatus.PROCESSED
+    assert t2.status == TransactionStatus.PROCESSED
+    assert q.list_pending() == []
+    assert pytest.approx(acc_a.get_account_info()["balance"]) == 75.0
+    assert pytest.approx(acc_b.get_account_info()["balance"]) == 25.0
